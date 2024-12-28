@@ -1,0 +1,41 @@
+CC = gcc
+CFLAGS = -Wall -flto -Wextra -Wpedantic -march=native -funroll-loops -export-dynamic -fomit-frame-pointer
+LDFLAGS += $(shell pkg-config --libs cairo wayland-client)
+CFLAGS += $(shell pkg-config --cflags cairo wayland-client)
+CFLAGS += -Isrc/
+CFLAGS += -DWLR_USE_UNSTABLE
+SRCFILES = src/create-shm.c src/xdg-shell-client-protocol.c src/welcomescreen.c
+OBJFILES = $(patsubst src/%.c, %.o, $(SRCFILES))
+TARGET = welcomescreen
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+
+all: $(TARGET)
+
+$(TARGET): $(OBJFILES)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	@echo "\nSuccessfully built $(TARGET)!\nType 'make run' to test or 'sudo make install' to install."
+
+%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: run
+
+run: $(TARGET)
+	@echo
+	@echo "_________________________________________________________________________________________________________"
+	@echo
+	@echo "'"$(TARGET)"'" output is:
+	@echo "_________________________________________________________________________________________________________"
+	@echo
+	@./$(TARGET)
+
+install: $(TARGET)
+	install -d $(DESTDIR)$(BINDIR)
+	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)
+
+clean:
+	rm -f $(OBJFILES) $(TARGET)
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
